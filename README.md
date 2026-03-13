@@ -1,5 +1,9 @@
 # Extreme Event Attribution Challenge — ELLIS Winter School 2026
 
+[![Open 01 – Extraction in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/01_extraction.ipynb)
+[![Open 02 – Attribution in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/02_attribution.ipynb)
+[![Open 03 – Evaluation in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/03_evaluation.ipynb)
+
 ## Overview
 
 This challenge focuses on **probabilistic extreme event attribution**: given an observed
