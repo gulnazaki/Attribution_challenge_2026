@@ -1,9 +1,5 @@
 # Extreme Event Attribution Challenge — ELLIS Winter School 2026
 
-[![Open 01 – Extraction in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/01_extraction.ipynb)
-[![Open 02 – Attribution in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/02_attribution.ipynb)
-[![Open 03 – Evaluation in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/03_evaluation.ipynb)
-
 ## Overview
 
 This challenge focuses on **probabilistic extreme event attribution**: given an observed
@@ -44,7 +40,7 @@ conditions.
 
 ## Workflow
 
-### Step 1 — Extract data (`01_extraction.ipynb`)
+### Step 1 — Extract data (`01_extraction.ipynb`) [![Open 01 – Extraction in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/01_extraction.ipynb)
 
 Edit the `CONFIG` block at the top of the notebook (paths, variable names, percentile,
 number of members) then **Run All**.
@@ -75,7 +71,7 @@ Output files are saved to `data/` with the naming convention:
 extracted_{var}_nmem{N}_start{Y}_p{P}.pkl
 ```
 
-### Step 2 — Attribution (`02_attribution.ipynb`)
+### Step 2 — Attribution (`02_attribution.ipynb`) [![Open 02 – Attribution in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/02_attribution.ipynb)
 
 Set `DATA_PATH` and `RESULTS_DIR` at the top of the notebook, then run all cells.
 Results are saved to `results/attribution_{YYYYMMDD_HHMM}.csv`.
@@ -119,7 +115,7 @@ ATTRIBUTION_METHODS['pn_my_method'] = lambda ctx: run_my_method(
 
 `{mth}` is one of `empirical`, `gaussian`, `gev`.
 
-### Step 3 — Evaluation (`03_evaluation.ipynb`)
+### Step 3 — Evaluation (`03_evaluation.ipynb`) [![Open 03 – Evaluation in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/03_evaluation.ipynb)
 
 Set `RESULTS_DIR` and optionally `RESULTS_PATH` (defaults to the latest CSV in
 `results/`). Edit `algo_groups` to match the columns you want to compare, then
