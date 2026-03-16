@@ -219,7 +219,9 @@ References are organised by methodological category to mirror the methods implem
 
 ### Thermodynamic adjustment (GMT regression)
 
-- **Philip et al. (2020)** — see above.
+- **Philip et al. (2020)** — A protocol for probabilistic extreme event attribution analyses.
+*Advances in Statistical Climatology, Meteorology and Oceanography*
+https://ascmo.copernicus.org/articles/6/177/2020/
   > The standard statistical attribution approach used by the World Weather Attribution for event attribution. Used as the basis for this challenge. `run_thermo_ml`.
 
 ---
