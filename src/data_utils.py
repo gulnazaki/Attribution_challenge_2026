@@ -213,3 +213,28 @@ def event_frequency_map(event_mask):
     freq      = (event_mask > 0).sum(dim="time")
     freq.name = "event_count"
     return freq
+
+
+def get_window(d, e_idx, is_factual, window_before=72, window_after=12):
+    """
+    Return (t_obs, t0, t1) for a given event index.
+
+    Parameters
+    ----------
+    d            : member data dict from the .pkl file.
+    e_idx        : int   event index.
+    is_factual   : bool  True → use factual run indices.
+    window_before: int   months before event (default 72).
+    window_after : int   months after  event (default 12).
+
+    Returns
+    -------
+    t_obs : int   absolute time index of the event.
+    t0    : int   start of the PN window.
+    t1    : int   end   of the PN window.
+    """
+    idx_arr = d['idx_f'] if is_factual else d['idx_c']
+    t_obs   = idx_arr[e_idx]
+    t0 = max(0, t_obs - window_before)
+    t1 = min(d['f_tas'].shape[0], t_obs + window_after)
+    return t_obs, t0, t1

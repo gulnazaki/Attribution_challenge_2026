@@ -213,3 +213,67 @@ def run_analogues_ridge(tas_f, gmt_f, gmt_c, slp_feats, obs_val, t_obs, t_range,
 
     t0, t1 = t_range
     return compute_pn(tas_f[t0:t1], tas_dyn, obs_val, method=mth)
+
+
+def run_analogues_local(tas_f, gmt_f, gmt_c, slp_f, slp_lat, slp_lon,
+                         ev_lat, ev_lon, obs_val, t_obs, t_range, mth,
+                         half_width_deg=25.0, n_analogues=100,
+                         metric='euclidean', algorithm='auto'):
+    """
+    Local analogue method: KNN search on a lat/lon box around the event
+    barycentre, using the full time series as the analogue pool.
+
+    The counterfactual distribution is the temperatures of the k nearest
+    neighbours (direct, no detrending, no bias correction). The full
+    record (all available years) is used as the pool so the search is
+    not artificially limited to an early pre-warming period.
+
+    Unlike the global analogue methods, the SLP distance is computed only
+    within the local box, making it more sensitive to the regional
+    circulation pattern that directly drives the event.
+
+    Parameters
+    ----------
+    tas_f          : array (T,)               Full factual temperature series.
+    gmt_f          : array (T,)               Smoothed factual GMT anomaly.
+    gmt_c          : array (T,)               Smoothed counterfactual GMT.
+    slp_f          : array (T, n_lat, n_lon)  Full global SLP — data['f_slp']
+    slp_lat        : array (n_lat,)           data['slp_lat']
+    slp_lon        : array (n_lon,)           data['slp_lon']
+    ev_lat         : float                    data['location'][e_idx, 0]
+    ev_lon         : float                    data['location'][e_idx, 1]
+    obs_val        : float                    Event threshold.
+    t_obs          : int                      Time index of the event.
+    t_range        : tuple (t0, t1)           Window for PN computation.
+    mth            : str                      PN estimator.
+    half_width_deg : float
+        Half-width of the local SLP box in degrees (default 25.0 → 50×50°).
+        Should match the spatial scale of the circulation feature driving
+        the event; consistent with ANALOGUE_HALF_DEG in the notebooks.
+    n_analogues    : int    Number of nearest neighbours (default 100).
+    metric         : str    Distance metric for KNN (default 'euclidean').
+    algorithm      : str    KNN algorithm.
+
+    Returns
+    -------
+    float  PN value.
+    """
+    from data_utils import extract_local_slp
+
+    # Extract the local SLP box — (T, n_pts)
+    slp_local = extract_local_slp(
+        slp_f, slp_lat, slp_lon, ev_lat, ev_lon, half_width_deg)
+
+    # KNN on full record, excluding the event timestep itself
+    T = slp_local.shape[0]
+    pool_idx = np.array([t for t in range(T) if t != t_obs])
+    knn = NearestNeighbors(n_neighbors=n_analogues,
+                            metric=metric, algorithm=algorithm)
+    knn.fit(slp_local[pool_idx])
+    _, idx = knn.kneighbors(slp_local[t_obs].reshape(1, -1))
+
+    # Temperatures of the nearest neighbours → counterfactual distribution
+    tas_dyn = tas_f[pool_idx[idx[0]]]
+
+    t0, t1 = t_range
+    return compute_pn(tas_f[t0:t1], tas_dyn, obs_val, method=mth)

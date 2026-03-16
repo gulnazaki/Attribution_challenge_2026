@@ -103,7 +103,7 @@ def run_thermo_ml(tas_f, gmt_f, gmt_c, obs_val, t_range, mth):
 # ---------------------------------------------------------------------------
 
 def run_dyn_adj_global_pca(tas_f, slp_f, obs_val, t_range, mth,
-                            n_components=50, alphas=np.logspace(-5, 10, 20)):
+                            n_components=50, alphas=np.logspace(-5, 15, 50)):
     """
     Dynamical adjustment on global SLP compressed with PCA.
 
@@ -137,7 +137,7 @@ def run_dyn_adj_global_pca(tas_f, slp_f, obs_val, t_range, mth,
 
 def run_dyn_adj_local(tas_f, slp_f, slp_lat, slp_lon, ev_lat, ev_lon,
                       obs_val, t_range, mth,
-                      half_width_deg=12.5, alphas=np.logspace(-5, 10, 20)):
+                      half_width_deg=12.5, alphas=np.logspace(-5, 15, 50)):
     """
     Dynamical adjustment on a raw local SLP box (no PCA).
 
@@ -170,13 +170,52 @@ def run_dyn_adj_local(tas_f, slp_f, slp_lat, slp_lon, ev_lat, ev_lon,
 
 
 # ---------------------------------------------------------------------------
+# Dynamical adjustment — local SLP box, window only, no PCA
+# ---------------------------------------------------------------------------
+
+def run_dyn_adj_local_window(tas_f, slp_f, slp_lat, slp_lon, ev_lat, ev_lon,
+                              obs_val, t_range, mth,
+                              half_width_deg=25.0, alphas=np.logspace(-5, 15, 50)):
+    """
+    Dynamical adjustment on a raw local SLP box, no PCA.
+
+    Ridge is fitted on the full time series (1850-2014) so the regression
+    captures the long-term SLP-temperature relationship and produces smooth,
+    stable coefficients. PN is then computed on the window [t0, t1].
+
+    Parameters
+    ----------
+    tas_f          : array (T,)               Full factual temperature series.
+    slp_f          : array (T, n_lat, n_lon)  Full global SLP — data['f_slp']
+    slp_lat        : array (n_lat,)           data['slp_lat']
+    slp_lon        : array (n_lon,)           data['slp_lon']
+    ev_lat         : float
+    ev_lon         : float
+    obs_val        : float
+    t_range        : tuple (t0, t1)           Window used only for PN computation.
+    mth            : str
+    half_width_deg : float   Half-width in degrees (default 25.0 -> 50x50 total).
+    alphas         : array-like
+
+    Returns
+    -------
+    float  PN value.
+    """
+    slp_local = extract_local_slp(slp_f, slp_lat, slp_lon, ev_lat, ev_lon, half_width_deg)
+    reg       = RidgeCV(alphas=alphas).fit(slp_local, tas_f)   # full series fit
+    tas_dyn   = reg.predict(slp_local)
+    t0, t1    = t_range
+    return compute_pn(tas_f[t0:t1], tas_dyn[t0:t1], obs_val, method=mth)
+
+
+# ---------------------------------------------------------------------------
 # Dynamical adjustment — local SLP box + PCA
 # ---------------------------------------------------------------------------
 
 def run_dyn_adj_local_pca(tas_f, slp_f, slp_lat, slp_lon, ev_lat, ev_lon,
                            obs_val, t_range, mth,
                            half_width_deg=25.0, n_components=20,
-                           alphas=np.logspace(-5, 10, 20)):
+                           alphas=np.logspace(-5, 15, 50)):
     """
     Dynamical adjustment on a local SLP box compressed with PCA.
 
@@ -209,3 +248,49 @@ def run_dyn_adj_local_pca(tas_f, slp_f, slp_lat, slp_lon, ev_lat, ev_lon,
     tas_dyn   = reg.predict(slp_pcs)
     t0, t1    = t_range
     return compute_pn(tas_f[t0:t1], tas_dyn[t0:t1], obs_val, method=mth)
+
+
+# ---------------------------------------------------------------------------
+# Convenience wrappers used by exploration / visualisation code
+# ---------------------------------------------------------------------------
+
+def thermo_cf(tas, gmt):
+    """
+    Build a thermodynamic counterfactual temperature series.
+
+    Removes the GMT-driven trend and replaces it with the pre-industrial
+    level (first value of the factual GMT).
+
+    Parameters
+    ----------
+    tas : array (T,)   Factual temperature time series.
+    gmt : array (T,)   Smoothed factual GMT anomaly.
+
+    Returns
+    -------
+    ndarray (T,)  Counterfactual temperature.
+    """
+    gmt_c = np.full_like(gmt, gmt[0])
+    reg   = LinearRegression().fit(gmt[:, None], tas)
+    return tas - reg.predict(gmt[:, None]) + reg.predict(gmt_c[:, None])
+
+
+def pn_gaussian(tas_win, cf_win, threshold):
+    """
+    Quick PN estimate using Gaussian tail probabilities.
+
+    Parameters
+    ----------
+    tas_win   : array (n,)  Factual temperature sample.
+    cf_win    : array (m,)  Counterfactual temperature sample.
+    threshold : float       Event exceedance threshold.
+
+    Returns
+    -------
+    float  PN in [0, 1].
+    """
+    mu_f,  s_f  = norm.fit(tas_win)
+    mu_cf, s_cf = norm.fit(cf_win)
+    p_f  = norm.sf(threshold, mu_f,  s_f)
+    p_cf = norm.sf(threshold, mu_cf, s_cf)
+    return max(0.0, 1.0 - p_cf / p_f) if p_f > 0 else 0.0
