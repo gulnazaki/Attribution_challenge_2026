@@ -1,5 +1,11 @@
 # Extreme Event Attribution Challenge — ELLIS Winter School 2026
 
+[![Open 00 – Exploration in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/00_exploration.ipynb)
+[![Open 01 – Extraction in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/01_extraction.ipynb)
+[![Open 02 – Attribution in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/02_attribution.ipynb)
+[![Open 03 – Evaluation in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/03_evaluation.ipynb)
+[![Open 04 – Exploration in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/04_exploration.ipynb)
+
 ## Overview
 
 This challenge focuses on **probabilistic extreme event attribution**: given an observed
@@ -40,7 +46,7 @@ conditions.
 
 ## Workflow
 
-### Step 1 — Extract data (`01_extraction.ipynb`) [![Open 01 – Extraction in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/01_extraction.ipynb)
+### Step 1 — Extract data (`01_extraction.ipynb`)
 
 Edit the `CONFIG` block at the top of the notebook (paths, variable names, percentile,
 number of members) then **Run All**.
@@ -71,7 +77,7 @@ Output files are saved to `data/` with the naming convention:
 extracted_{var}_nmem{N}_start{Y}_p{P}.pkl
 ```
 
-### Step 2 — Attribution (`02_attribution.ipynb`) [![Open 02 – Attribution in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/02_attribution.ipynb)
+### Step 2 — Attribution (`02_attribution.ipynb`)
 
 Set `DATA_PATH` and `RESULTS_DIR` at the top of the notebook, then run all cells.
 Results are saved to `results/attribution_{YYYYMMDD_HHMM}.csv`.
@@ -115,7 +121,7 @@ ATTRIBUTION_METHODS['pn_my_method'] = lambda ctx: run_my_method(
 
 `{mth}` is one of `empirical`, `gaussian`, `gev`.
 
-### Step 3 — Evaluation (`03_evaluation.ipynb`) [![Open 03 – Evaluation in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/homerdurand/Attribution_challenge_2026/blob/main/03_evaluation.ipynb)
+### Step 3 — Evaluation (`03_evaluation.ipynb`)
 
 Set `RESULTS_DIR` and optionally `RESULTS_PATH` (defaults to the latest CSV in
 `results/`). Edit `algo_groups` to match the columns you want to compare, then
@@ -144,9 +150,7 @@ Two figures are produced and saved to `figures/`:
 | Function | Description |
 |---|---|
 | `run_analogues` | Standard KNN on SLP features with optional GMT detrending |
-| `run_analogues_lasso` | KNN restricted to Lasso-selected SLP dimensions |
-| `run_analogues_causal` | KNN restricted to Mutual-Information-selected dimensions |
-| `run_analogues_ridge` | Local Ridge bias-correction inside the KNN pool |
+| `run_analogues_local` | Standard KNN on local SLP features with optional GMT detrending |
 
 ### `src/data_utils.py`
 
@@ -189,22 +193,63 @@ methods face non-stationarity: past analogues may no longer represent present
 variability as the climate warms.
 
 ### Promising improvements
-- **Conformal prediction** — distribution-free calibration that guarantees valid
-  Type I error control by construction, without tail distribution assumptions.
-- **Non-stationary counterfactual** — replace the constant GMT baseline with a
-  proper pre-industrial trajectory from detection-and-attribution methods.
-- **Better feature selection** — causal discovery (PC algorithm, NOTEARS) for a
-  principled Markov Blanket in analogue matching.
-- **Bias-corrected analogue pools** — quantile mapping or optimal transport to
-  account for the mean-state shift between the past pool and the present event.
-- **Multivariate attribution** — compound events (e.g. hot and dry) require
-  multivariate PN estimation.
+- **Optimal window size** - Selecting an optimal window size for dynamical adjustment that controls type I error and maximizes power.
+- **Better feature selection** — Selecting relevant features on which computing the distance metric using Causal Discovery, Lasso regression or other approaches.
+- **Better fits of GEV distribution** — Fiiting all the parameters of the GEV distribution using MLE.
+- **Nonlinear modelling** — Using more advance ML algorithms to predict the temperature from GMT and the SLP field.
 
 ---
 
 ## Recommended reading
 
-- Philip et al. (2020) — A protocol for probabilistic extreme event attribution
-- Naveau et al. (2023) — Statistical methods for extreme event attribution in climate science
-- Deser et al. (2020) — Insights from Earth system model large ensembles
-- Mamalakis et al. (2022) — Carefully choose the baseline to compare climate forcing
+References are organised by methodological category to mirror the methods implemented in this challenge.
+
+---
+
+### General framework & evaluation
+
+- **Naveau, Hannart & Ribes (2020)** — Statistical methods for extreme event attribution in climate science.
+  *Annual Review of Statistics and Its Application*, 7, 89–110.
+  https://doi.org/10.1146/annurev-statistics-031219-041314
+  > Comprehensive review of the statistical theory underpinning PN, GEV fits, and counterfactual inference.
+
+---
+
+### Thermodynamic adjustment (GMT regression)
+
+- **Philip et al. (2020)** — see above.
+  > The standard statistical attribution approach used by the World Weather Attribution for event attribution. Used as the basis for this challenge. `run_thermo_ml`.
+
+---
+
+### Dynamical adjustment (Ridge regression on SLP)
+
+- **Sippel, Meinshausen, Merrifield et al. (2019)** — Uncovering the forced climate response from a single ensemble member using statistical learning.
+  *Journal of Climate*, 32(17), 5677–5699.
+  https://doi.org/10.1175/JCLI-D-18-0882.1
+  > Introduces the regularised Ridge regression dynamical adjustment technique implemented in `run_dyn_adj_local_window`. Shows that regularised linear models trained on SLP explain a large part of regional temperature variability and allow extraction of the forced thermodynamic signal from a single ensemble member.
+
+- **Pfleiderer, Merrifield, Dunkl et al. (2026)** — Considerable yet contrasting regional imprint
+  of circulation change on summer temperature trends across the Northern hemisphere mid-latitudes.
+  *Weather and Climate Dynamics*, 7, 89–116.
+  https://doi.org/10.5194/wcd-7-89-2026
+  > Benchmark comparison of multiple dynamical adjustment methods (Ridge, analogues, ML) against
+  > nudged circulation simulations. Directly relevant for evaluating the relative performance of
+  > `run_dyn_adj_local_window` vs analogue approaches implemented in this challenge.
+---
+
+### Analogue methods
+
+- **Noyelle, Faranda, Robin, Vrac & Yiou (2025)** — Attributing the occurrence and intensity of extreme events with the flow analogue method.
+  *Weather and Climate Dynamics*, 6, 817–836.
+  https://doi.org/10.5194/wcd-6-817-2025
+  > Derives conditional probability ratios and intensity changes using circulation analogues; directly informs the KNN-based analogue methods (`run_analogues`, `run_analogues_lasso`, `run_analogues_ridge`).
+
+---
+
+### Machine learning attribution
+
+- **Bône, Gastineau, Thiria et al. (2023)** — Detection and attribution of climate change using a neural network.
+  *Journal of Advances in Modeling Earth Systems (JAMES)*, 15, e2022MS003475.
+  https://doi.org/10.1029/2022MS003475
+  > CNN-based detection and attribution of GSAT changes; methodological inspiration for ML approaches to the thermodynamic component.
