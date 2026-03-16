@@ -150,7 +150,9 @@ Two figures are produced and saved to `figures/`:
 | Function | Description |
 |---|---|
 | `run_analogues` | Standard KNN on SLP features with optional GMT detrending |
+| `run_analogues_lasso` | KNN restricted to Lasso-selected SLP dimensions |
 | `run_analogues_local` | Standard KNN on local SLP features with optional GMT detrending |
+
 
 ### `src/data_utils.py`
 
